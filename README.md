@@ -91,7 +91,7 @@ Provider retention remains governed by the owner's provider account policies.
 
 The production deployment is configured through the GitHub-connected Vercel project `dan-agent-f`. Add the environment variables in Vercel, deploy a preview, verify `/`, `/analysis`, `/api/quotes`, and the protected `/api/deep-dive`, then promote the approved commit to production.
 
-Production URL: pending first verified deployment.
+Production URL: [dan-agent-f.vercel.app](https://dan-agent-f.vercel.app)
 
 ## Governance
 
