@@ -32,7 +32,7 @@ export function DeepDiveDashboard({ developmentMode = process.env.NODE_ENV === "
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
-  const unprotectedDevRun = developmentMode && !siteKey;
+  const unprotectedDevRun = developmentMode;
 
   useEffect(() => { queueMicrotask(() => setReport(loadLatestReport())); }, []);
   const stale = useMemo(() => report ? isReportStale(report.portfolioFingerprint, portfolio) : false, [portfolio, report]);
@@ -48,7 +48,11 @@ export function DeepDiveDashboard({ developmentMode = process.env.NODE_ENV === "
       const response = await fetch("/api/deep-dive", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consent: true, turnstileToken: token, portfolio }),
+        body: JSON.stringify({
+          consent: true,
+          turnstileToken: unprotectedDevRun ? "" : token,
+          portfolio,
+        }),
       });
       if (!response.ok) {
         const payload = await response.json() as { error?: string };
@@ -115,7 +119,7 @@ export function DeepDiveDashboard({ developmentMode = process.env.NODE_ENV === "
           <p className="mt-2 text-xs leading-5 text-[#817d74]">Your snapshot is sent only after consent. It includes tickers, lots, average/current prices, cash, and watchlist. The server does not store it.</p>
           <div className="mt-4 rounded-xl bg-[#faf9f5] p-3 text-xs"><p className="flex justify-between"><span>Holdings</span><b>{portfolio.holdings.length}</b></p><p className="mt-2 flex justify-between"><span>Unique symbols</span><b>{symbolCount}/20</b></p></div>
           <label className="mt-4 flex min-h-11 cursor-pointer items-start gap-3 text-xs leading-5"><input type="checkbox" className="mt-1 size-4 accent-[#8b7138]" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>I consent to sending this snapshot to the configured market, news, and OpenAI services for this run.</span></label>
-          <div className="mt-4">{siteKey ? <TurnstileWidget siteKey={siteKey} onToken={handleToken} /> : unprotectedDevRun ? <p role="status" className="rounded-xl border border-[#ead8ae] bg-[#fffaf0] p-3 text-xs font-medium leading-5 text-[#775f2f]">Unprotected dev run: Turnstile verification is skipped only in local development.</p> : <p role="status" className="rounded-xl border border-[#ead8ae] bg-[#fffaf0] p-3 text-xs text-[#775f2f]">Live Deep Dive is disabled until the Turnstile site key is configured.</p>}</div>
+          <div className="mt-4">{unprotectedDevRun ? <p role="status" className="rounded-xl border border-[#ead8ae] bg-[#fffaf0] p-3 text-xs font-medium leading-5 text-[#775f2f]">Unprotected dev run: Turnstile verification is bypassed for this explicit development mode.</p> : siteKey ? <TurnstileWidget siteKey={siteKey} onToken={handleToken} /> : <p role="status" className="rounded-xl border border-[#ead8ae] bg-[#fffaf0] p-3 text-xs text-[#775f2f]">Live Deep Dive is disabled until the Turnstile site key is configured.</p>}</div>
           <Button className="mt-4 w-full" disabled={!consent || (!token && !unprotectedDevRun) || running || portfolio.holdings.length === 0} onClick={() => void run()}>{running ? <LoaderCircle className="size-4 animate-spin" /> : <BrainCircuit className="size-4" />} Run DanA-F Engine</Button>
           {error && <p role="alert" className="mt-3 text-xs leading-5 text-[#9a4b43]">{error}</p>}
         </Card>

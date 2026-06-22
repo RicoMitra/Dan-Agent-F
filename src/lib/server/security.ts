@@ -23,30 +23,33 @@ export type DeepDiveConfig = {
   upstashToken: string;
 };
 
+export function isDeepDiveDevelopmentMode(environment: Record<string, string | undefined>) {
+  return (
+    environment.NODE_ENV === "development" ||
+    environment.DEV_MODE?.trim().toLowerCase() === "true"
+  );
+}
+
 export function getDeepDiveConfig(environment: Record<string, string | undefined>) {
-  const development = environment.NODE_ENV === "development";
+  const development = isDeepDiveDevelopmentMode(environment);
   const missingCore = coreKeys.filter((key) => !environment[key]?.trim());
   const missingSecurity = productionSecurityKeys.filter((key) => !environment[key]?.trim());
-  const missing = [...missingCore, ...(development ? [] : missingSecurity)];
+  const missing = development ? [] : [...missingCore, ...missingSecurity];
   if (missing.length > 0) return { ok: false as const, missing: [...missing] };
-  const bypassTurnstile =
-    development &&
-    (!environment.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ||
-      !environment.TURNSTILE_SECRET_KEY?.trim());
-  const bypassRateLimit =
-    development &&
-    (!environment.UPSTASH_REDIS_REST_URL?.trim() ||
-      !environment.UPSTASH_REDIS_REST_TOKEN?.trim());
+  const aiConfigured = missingCore.length === 0;
+  const bypassTurnstile = development;
+  const bypassRateLimit = development;
   return {
     ok: true as const,
     config: {
-      openAIKey: environment.OPENAI_API_KEY!,
-      specialistModel: environment.OPENAI_SPECIALIST_MODEL!,
-      advisorModel: environment.OPENAI_ADVISOR_MODEL!,
+      openAIKey: environment.OPENAI_API_KEY?.trim() ?? "",
+      specialistModel: environment.OPENAI_SPECIALIST_MODEL?.trim() ?? "",
+      advisorModel: environment.OPENAI_ADVISOR_MODEL?.trim() ?? "",
       turnstileSecret: environment.TURNSTILE_SECRET_KEY?.trim() ?? "",
       upstashUrl: environment.UPSTASH_REDIS_REST_URL?.trim() ?? "",
       upstashToken: environment.UPSTASH_REDIS_REST_TOKEN?.trim() ?? "",
     } satisfies DeepDiveConfig,
+    aiConfigured,
     security: {
       bypassTurnstile,
       bypassRateLimit,

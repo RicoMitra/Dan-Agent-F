@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DeepDiveDashboard } from "@/components/deep-dive-dashboard";
 import { REPORT_STORAGE_KEY } from "@/lib/storage";
 import type { DeepDiveReport } from "@/lib/types";
@@ -43,7 +43,11 @@ const report: DeepDiveReport = {
 
 describe("Deep Dive workspace", () => {
   beforeEach(() => window.localStorage.clear());
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
 
   it("explains consent, agents, and unconfigured live access", () => {
     render(<DeepDiveDashboard />);
@@ -54,6 +58,7 @@ describe("Deep Dive workspace", () => {
   });
 
   it("enables a clearly labelled unprotected run after consent in development", () => {
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "configured-site-key");
     render(<DeepDiveDashboard developmentMode />);
 
     expect(screen.getByText(/unprotected dev run/i)).toBeInTheDocument();
@@ -61,6 +66,31 @@ describe("Deep Dive workspace", () => {
     expect(button).toBeDisabled();
     fireEvent.click(screen.getByRole("checkbox"));
     expect(button).toBeEnabled();
+  });
+
+  it("executes with an empty Turnstile token and renders the streamed report in development", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "configured-site-key");
+    const developmentReport: DeepDiveReport = {
+      ...report,
+      id: "development-report",
+      security: { unprotectedDevRun: true, deterministicFallback: true },
+    };
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(`${JSON.stringify({ type: "report", report: developmentReport })}\n`, {
+        status: 200,
+        headers: { "Content-Type": "application/x-ndjson" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    render(<DeepDiveDashboard developmentMode />);
+
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /run dana-f engine/i }));
+
+    expect(await screen.findByRole("heading", { name: "DanA-F Deep Dive Report" })).toBeInTheDocument();
+    expect(screen.getAllByText(/unprotected dev run/i).length).toBeGreaterThan(0);
+    const request = fetcher.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(request.body as string)).toMatchObject({ turnstileToken: "", consent: true });
   });
 
   it("renders the complete premium report structure without a dense table", async () => {

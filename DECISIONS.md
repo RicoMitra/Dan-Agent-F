@@ -89,5 +89,11 @@ Add new entries instead of silently changing accepted decisions. Mark replaced d
 ## D-015: Development-Only Security Bypass
 
 - **Status:** Accepted
-- **Decision:** When and only when `NODE_ENV` is `development`, allow missing Turnstile and Upstash configuration to be bypassed while consent remains mandatory. Mark the UI and report as `Unprotected dev run`.
-- **Consequence:** Local analysis can run without Cloudflare setup. Production remains fail-closed and requires Turnstile plus rate limiting.
+- **Decision:** Resolve development mode server-side when `NODE_ENV=development` or the owner explicitly sets `DEV_MODE=true`. Bypass Turnstile and Upstash only in that mode while consent remains mandatory, and mark UI/report as `Unprotected dev run`.
+- **Consequence:** Local or explicitly flagged deployments can run without Cloudflare setup. Unflagged production remains fail-closed and requires Turnstile plus rate limiting.
+
+## D-016: Honest Deterministic Development Fallback
+
+- **Status:** Accepted
+- **Decision:** If OpenAI configuration is absent during explicit development mode, continue deterministic evidence and portfolio processing while specialist and Advisor sections return unavailable fallbacks.
+- **Consequence:** Development always produces a valid partial report without fabricating AI content. Configured OpenAI credentials continue to use the normal multi-agent path.

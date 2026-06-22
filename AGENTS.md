@@ -30,6 +30,7 @@ Dan-Agent-F (Daniel Agent Finance) is a read-only, AI-powered portfolio intellig
 - No account or portfolio database is used. The app provides explicit reset and report-delete actions.
 - Quote refresh sends ticker symbols only. Deep Dive sends the validated portfolio snapshot only after explicit per-run consent.
 - Deep Dive requests pass through a server route protected by Cloudflare Turnstile and Upstash Redis rate limits of 3 runs/hour and 10 runs/day per hashed IP.
+- `NODE_ENV=development` or explicit owner-approved `DEV_MODE=true` may bypass Turnstile and rate limits for visibly labelled unprotected diagnostics. Consent and input validation remain mandatory; unflagged production stays fail-closed.
 - Server logs must exclude portfolio payloads, prompts, generated analysis, Turnstile tokens, and API keys.
 - OpenAI requests use `store: false`; provider retention remains governed by the owner's OpenAI account policy and must be disclosed.
 - Never commit credentials, personal exports, `.env.local`, Vercel metadata, or production portfolio data.

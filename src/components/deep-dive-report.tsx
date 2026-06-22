@@ -71,6 +71,7 @@ export function DeepDiveReportView({ report, stale, exporting = false, onDownloa
               <span className="rounded-full border border-[#ded8cc] bg-[#faf7f0] px-3 py-1.5">{new Date(report.generatedAt).toLocaleString("en-ID")}</span>
               <span className="rounded-full border border-[#ded8cc] bg-[#faf7f0] px-3 py-1.5">{report.status} coverage</span>
               {report.security.unprotectedDevRun && <span className="rounded-full border border-[#e1c987] bg-[#fff6dd] px-3 py-1.5 font-semibold text-[#745c26]">Unprotected dev run</span>}
+              {report.security.deterministicFallback && <span className="rounded-full border border-[#ddd6c8] bg-[#f3efe6] px-3 py-1.5 font-semibold text-[#665f53]">Deterministic dev fallback</span>}
             </div>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row lg:flex-col lg:items-end">

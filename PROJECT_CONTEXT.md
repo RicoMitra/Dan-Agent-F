@@ -38,7 +38,7 @@ The combined unique symbol limit is 20; the watchlist limit is 10.
 
 ## Engine Architecture
 
-1. Validate request, consent, Turnstile token, symbol limits, and rate limits.
+1. Validate request, consent, symbol limits, and either Turnstile/rate limits or the explicit development-mode override.
 2. Fetch Yahoo quote/OHLCV and GDELT article metadata with timeouts and partial-result handling.
 3. Calculate deterministic portfolio, impact, momentum, breadth, volatility, and evidence-balance models.
 4. Run Market, News, Sentiment, Portfolio, and Risk agents in parallel with structured schemas.
@@ -51,11 +51,11 @@ Specialists explain only their bounded evidence. Advisor produces narrative and 
 
 No authentication or portfolio database is used. Turnstile reduces automated abuse; Upstash stores expiring hashed-IP counters only. OpenAI, GDELT, and Yahoo requests run server-side. The report is kept locally, and the server does not log private payloads.
 
-Production fails closed unless both Turnstile keys and Upstash credentials are configured. Local `NODE_ENV=development` may bypass a missing Turnstile pair and missing Upstash credentials so the engine can be exercised; consent remains mandatory and both the UI and generated report label the result as an `Unprotected dev run`.
+Development mode is resolved server-side from `NODE_ENV=development` or `DEV_MODE=true` and passed to the client UI. It bypasses Turnstile and rate limiting, but never consent or portfolio validation, and both UI and report display `Unprotected dev run`. When OpenAI is absent, deterministic market/portfolio processing still returns a partial report while all AI sections are explicitly unavailable. Without development mode, production fails closed unless OpenAI, both Turnstile keys, and Upstash credentials are configured.
 
 The visible Deep Dive DOM is the source for user-triggered WYSIWYG export. Report sections are captured and paginated locally with html2canvas and jsPDF. No portfolio or report data is sent to a PDF service. A deterministic programmatic sample mirrors the same section order for CI and visual QA.
 
-Required production credentials are configured directly in Vercel. The application must present a disabled, actionable state when they are absent.
+Required protected-production credentials are configured directly in Vercel. The application presents a disabled, actionable state when they are absent and no explicit development override is active.
 
 ## Delivery Sequence
 
