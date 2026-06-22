@@ -14,7 +14,7 @@ Dan-Agent-F is read-only decision support. It does not predict prices, execute t
 ```text
 validated browser input -> versioned localStorage -> pure portfolio calculations
                                               |
-explicit consent + Turnstile -> protected server route -> Yahoo + GDELT evidence
+explicit consent + Turnstile (or labelled dev override) -> server route -> Yahoo + GDELT evidence
                                               |
                               five parallel specialists -> Advisor
                                               |
@@ -37,9 +37,10 @@ copy .env.example .env.local
 pnpm dev
 ```
 
-Monitoring works without credentials. Local Deep Dive requires the OpenAI values. In `NODE_ENV=development`, missing Turnstile or Upstash values are bypassed and every result is visibly marked `Unprotected dev run`. Production requires every value below and fails closed when any security value is missing.
+Monitoring works without credentials. Deep Dive development mode is active when `NODE_ENV=development` or `DEV_MODE=true`. In that mode, Turnstile and rate limiting are bypassed, consent remains mandatory, and every result is visibly marked `Unprotected dev run`. If OpenAI is absent, the engine returns an honest deterministic partial report with AI sections marked unavailable; configured OpenAI credentials activate the normal multi-agent pipeline. Without development mode, production requires every provider/security value and fails closed.
 
 ```dotenv
+DEV_MODE=false
 OPENAI_API_KEY=
 OPENAI_SPECIALIST_MODEL=
 OPENAI_ADVISOR_MODEL=
@@ -84,6 +85,7 @@ Generated PDF samples are written to `output/pdf/` and must be rendered to PNG f
 - Turnstile verification on every production run
 - Hashed-IP Upstash limits in production: 3 runs/hour and 10/day
 - Development-only missing-key bypass with visible `Unprotected dev run` labelling; consent is never bypassed
+- Missing OpenAI credentials in development produce a labelled deterministic partial fallback, never fabricated AI output
 - WYSIWYG Deep Dive PDF capture runs entirely in the browser
 - No portfolio, prompt, report, token, or API-key logging
 
@@ -91,7 +93,7 @@ Provider retention remains governed by the owner's provider account policies.
 
 ## Deployment
 
-The production deployment is configured through the GitHub-connected Vercel project `dan-agent-f`. Add the environment variables in Vercel, deploy a preview, verify `/`, `/analysis`, `/api/quotes`, and the protected `/api/deep-dive`, then promote the approved commit to production.
+The production deployment is configured through the GitHub-connected Vercel project `dan-agent-f`. Normal production should leave `DEV_MODE` unset/false and configure all provider/security values. An explicit `DEV_MODE=true` deployment is unprotected, visibly labelled, and intended only for development or owner-approved diagnostics. Verify `/`, `/analysis`, `/api/quotes`, and `/api/deep-dive` before promotion.
 
 Production URL: [dan-agent-f.vercel.app](https://dan-agent-f.vercel.app)
 

@@ -36,6 +36,28 @@ describe("Deep Dive security", () => {
     }
   });
 
+  it("enables explicit DEV_MODE in a production build and permits deterministic fallback", () => {
+    const result = getDeepDiveConfig({
+      NODE_ENV: "production",
+      DEV_MODE: "true",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.security.unprotectedDevRun).toBe(true);
+      expect(result.security.bypassTurnstile).toBe(true);
+      expect(result.aiConfigured).toBe(false);
+    }
+  });
+
+  it("keeps a normal production build fail-closed", () => {
+    const result = getDeepDiveConfig({
+      NODE_ENV: "production",
+      DEV_MODE: "false",
+    });
+    expect(result.ok).toBe(false);
+  });
+
   it("fails closed in production when Turnstile is missing", () => {
     const result = getDeepDiveConfig({
       NODE_ENV: "production",

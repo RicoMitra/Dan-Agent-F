@@ -142,7 +142,7 @@ export type DeepDiveReport = {
   dailyImpactPercentage: number;
   dailyImpactCoverage: number;
   health: PortfolioHealth;
-  security: { unprotectedDevRun: boolean };
+  security: { unprotectedDevRun: boolean; deterministicFallback?: boolean };
   sentiment: {
     status: "available" | "insufficient";
     score: number | null;

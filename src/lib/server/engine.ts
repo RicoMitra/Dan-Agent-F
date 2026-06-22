@@ -72,7 +72,7 @@ export async function runDeepDive(
   portfolio: PortfolioState,
   dependencies: EngineDependencies,
   onProgress: (event: EngineProgress) => void,
-  security: { unprotectedDevRun: boolean } = { unprotectedDevRun: false },
+  security: { unprotectedDevRun: boolean; deterministicFallback?: boolean } = { unprotectedDevRun: false },
 ): Promise<DeepDiveReport> {
   onProgress({ agent: "data", status: "started", message: "Collecting current evidence" });
   const evidence = await dependencies.fetchEvidence(portfolio);

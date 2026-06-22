@@ -4,6 +4,7 @@ import { deepDiveRequestSchema } from "@/lib/deep-dive-schema";
 import { createOpenAIAgents } from "@/lib/server/agents";
 import { fetchEngineEvidence } from "@/lib/server/evidence";
 import { runDeepDive } from "@/lib/server/engine";
+import type { EngineDependencies } from "@/lib/server/engine";
 import {
   checkRateLimits,
   getDeepDiveConfig,
@@ -17,6 +18,15 @@ export const maxDuration = 60;
 
 const jsonError = (message: string, status: number, extra?: Record<string, unknown>) =>
   NextResponse.json({ error: message, ...extra }, { status });
+
+const unavailableDevelopmentAgents: Pick<EngineDependencies, "runSpecialist" | "runAdvisor"> = {
+  runSpecialist: async () => {
+    throw new Error("OpenAI specialist is not configured for this development run.");
+  },
+  runAdvisor: async () => {
+    throw new Error("OpenAI Advisor is not configured for this development run.");
+  },
+};
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -67,12 +77,13 @@ export async function POST(request: NextRequest) {
       const emit = (event: DeepDiveStreamEvent) =>
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       try {
-        const client = new OpenAI({ apiKey: configuration.config.openAIKey });
-        const agents = createOpenAIAgents(
-          client as unknown as Parameters<typeof createOpenAIAgents>[0],
-          configuration.config.specialistModel,
-          configuration.config.advisorModel,
-        );
+        const agents = configuration.aiConfigured
+          ? createOpenAIAgents(
+              new OpenAI({ apiKey: configuration.config.openAIKey }) as unknown as Parameters<typeof createOpenAIAgents>[0],
+              configuration.config.specialistModel,
+              configuration.config.advisorModel,
+            )
+          : unavailableDevelopmentAgents;
         const report = await runDeepDive(
           parsed.data.portfolio,
           {
@@ -83,7 +94,10 @@ export async function POST(request: NextRequest) {
             createId: () => crypto.randomUUID(),
           },
           (progress) => emit({ type: "progress", ...progress }),
-          { unprotectedDevRun: configuration.security.unprotectedDevRun },
+          {
+            unprotectedDevRun: configuration.security.unprotectedDevRun,
+            deterministicFallback: !configuration.aiConfigured,
+          },
         );
         emit({ type: "report", report });
       } catch {
