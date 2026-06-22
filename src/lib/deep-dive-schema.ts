@@ -34,7 +34,7 @@ export const portfolioStateSchema = z
 
 export const deepDiveRequestSchema = z.object({
   consent: z.literal(true),
-  turnstileToken: z.string().min(1).max(4096),
+  turnstileToken: z.string().max(4096),
   portfolio: portfolioStateSchema,
 });
 

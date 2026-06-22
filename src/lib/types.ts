@@ -127,15 +127,22 @@ export type HoldingImpact = {
 };
 
 export type DeepDiveReport = {
-  version: 1;
+  version: 2;
   id: string;
   generatedAt: string;
   portfolioFingerprint: string;
   status: "complete" | "partial";
   executivePulse: string;
   portfolioValue: number;
+  investedCapital: number;
+  floatingProfitLoss: number;
+  cashBalance: number;
+  returnPercentage: number;
   dailyImpact: number;
+  dailyImpactPercentage: number;
   dailyImpactCoverage: number;
+  health: PortfolioHealth;
+  security: { unprotectedDevRun: boolean };
   sentiment: {
     status: "available" | "insufficient";
     score: number | null;
@@ -148,6 +155,8 @@ export type DeepDiveReport = {
     observations: number;
   };
   evidenceBalance: EvidenceBalance;
+  bullishEvidence: string[];
+  bearishEvidence: string[];
   risks: Array<{ id: string; title: string; detail: string; triggered: boolean }>;
   holdingImpacts: HoldingImpact[];
   watchlistComparison: Array<{ ticker: string; status: "holding" | "watchlist"; observation: string }>;

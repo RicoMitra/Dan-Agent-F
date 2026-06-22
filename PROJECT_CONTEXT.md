@@ -28,11 +28,11 @@ Summary KPIs, holdings editor, allocation, sector exposure, manual watchlist, Ma
 
 ### Deep Dive (`/analysis`)
 
-Consent and verification precede execution. The result contains Executive Pulse, daily portfolio impact, sentiment and confidence, risk triggers, evidence balance, impact by holding, watchlist comparison, news impact, daily narrative, non-trading checklist, methodology, and a source ledger.
+Consent and verification precede execution. The version-2 report presents a health-score header, four deterministic portfolio metrics, sentiment and confidence, daily impact and a holding list, risk triggers, an emphasized narrative, a non-trading checklist, bullish-versus-bearish evidence, methodology, and a source ledger. It uses the same calm cream-based hierarchy in the page and PDF, without a dense report table.
 
 ## Domain State
 
-`PortfolioState` version 2 stores holdings, cash, and watchlist locally. A holding records its current price source and optional market timestamp. The latest `DeepDiveReport` is stored separately with an input fingerprint and is marked stale whenever the portfolio or watchlist changes.
+`PortfolioState` version 2 stores holdings, cash, and watchlist locally. A holding records its current price source and optional market timestamp. The latest `DeepDiveReport` version 2 is stored separately with an input fingerprint and is marked stale whenever the portfolio or watchlist changes. Incompatible version-1 reports are ignored safely.
 
 The combined unique symbol limit is 20; the watchlist limit is 10.
 
@@ -50,6 +50,10 @@ Specialists explain only their bounded evidence. Advisor produces narrative and 
 ## Privacy and Operational Controls
 
 No authentication or portfolio database is used. Turnstile reduces automated abuse; Upstash stores expiring hashed-IP counters only. OpenAI, GDELT, and Yahoo requests run server-side. The report is kept locally, and the server does not log private payloads.
+
+Production fails closed unless both Turnstile keys and Upstash credentials are configured. Local `NODE_ENV=development` may bypass a missing Turnstile pair and missing Upstash credentials so the engine can be exercised; consent remains mandatory and both the UI and generated report label the result as an `Unprotected dev run`.
+
+The visible Deep Dive DOM is the source for user-triggered WYSIWYG export. Report sections are captured and paginated locally with html2canvas and jsPDF. No portfolio or report data is sent to a PDF service. A deterministic programmatic sample mirrors the same section order for CI and visual QA.
 
 Required production credentials are configured directly in Vercel. The application must present a disabled, actionable state when they are absent.
 

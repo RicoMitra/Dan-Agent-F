@@ -26,8 +26,10 @@ const doc = buildPortfolioReport({
 });
 writeFileSync(output, Buffer.from(doc.output("arraybuffer")));
 const deepDive: DeepDiveReport = {
-  version: 1, id: "sample-report", generatedAt: "2026-06-21T02:00:00.000Z", portfolioFingerprint: "sample", status: "complete", executivePulse: "Measured evidence with transparent coverage", portfolioValue: summary.totalPortfolioValue, dailyImpact: -1_250_000, dailyImpactCoverage: 1,
+  version: 2, id: "sample-report", generatedAt: "2026-06-21T02:00:00.000Z", portfolioFingerprint: "sample", status: "complete", executivePulse: "Measured evidence with transparent coverage", portfolioValue: summary.totalPortfolioValue, investedCapital: summary.totalInvestedCapital, floatingProfitLoss: summary.floatingProfitLoss, cashBalance: summary.cashBalance, returnPercentage: summary.returnPercentage, dailyImpact: -1_250_000, dailyImpactPercentage: (-1_250_000 / (summary.totalPortfolioValue + 1_250_000)) * 100, dailyImpactCoverage: 1, health: calculateHealthScore(summary), security: { unprotectedDevRun: false },
   sentiment: { status: "available", score: 18, confidence: 0.72, articleCount: 4 }, volatility: { dailyPercentage: 1.65, triggered: false, observations: 20 }, evidenceBalance: { score: 16, label: "mixed", components: { momentum: 20, sentiment: 18, breadth: 0, volatility: 34 } },
+  bullishEvidence: ["Price momentum contributes +20.0 to current evidence.", "News sentiment contributes +18.0 to current evidence."],
+  bearishEvidence: ["Single-holding concentration remains above its educational threshold."],
   risks: [{ id: "concentration", title: "Single-holding concentration", detail: "BBCA represents 40.2%; the educational trigger is 40%.", triggered: true }],
   holdingImpacts: [{ ticker: "BBCA", impact: -650_000, dailyChangePercentage: -1.2, coverage: "available" }, { ticker: "TLKM", impact: -600_000, dailyChangePercentage: -0.5, coverage: "available" }],
   watchlistComparison: [{ ticker: "ANTM", status: "watchlist", observation: "Market evidence only; excluded from portfolio value." }],

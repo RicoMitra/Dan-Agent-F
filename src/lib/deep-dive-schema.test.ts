@@ -32,9 +32,9 @@ describe("deep dive request schema", () => {
     expect(deepDiveRequestSchema.parse(request).portfolio.version).toBe(2);
   });
 
-  it("requires explicit consent and a Turnstile token", () => {
+  it("always requires explicit consent but permits the route to evaluate an empty dev token", () => {
     expect(deepDiveRequestSchema.safeParse({ ...request, consent: false }).success).toBe(false);
-    expect(deepDiveRequestSchema.safeParse({ ...request, turnstileToken: "" }).success).toBe(false);
+    expect(deepDiveRequestSchema.safeParse({ ...request, turnstileToken: "" }).success).toBe(true);
   });
 
   it("rejects more than 20 combined unique symbols", () => {

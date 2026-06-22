@@ -44,7 +44,7 @@ describe("portfolio storage migration", () => {
 });
 
 describe("latest report storage", () => {
-  const report = { version: 1, id: "report-1", portfolioFingerprint: "abc" } as DeepDiveReport;
+  const report = { version: 2, id: "report-1", portfolioFingerprint: "abc" } as DeepDiveReport;
 
   it("stores and deletes only the latest report", () => {
     saveLatestReport(report);
@@ -56,6 +56,14 @@ describe("latest report storage", () => {
 
   it("rejects malformed report JSON", () => {
     window.localStorage.setItem(REPORT_STORAGE_KEY, "not-json");
+    expect(loadLatestReport()).toBeNull();
+  });
+
+  it("rejects a version-1 report instead of rendering an incompatible layout", () => {
+    window.localStorage.setItem(
+      REPORT_STORAGE_KEY,
+      JSON.stringify({ version: 1, id: "legacy-report", portfolioFingerprint: "abc" }),
+    );
     expect(loadLatestReport()).toBeNull();
   });
 });
