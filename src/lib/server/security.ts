@@ -1,10 +1,14 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const requiredKeys = [
+const coreKeys = [
   "OPENAI_API_KEY",
   "OPENAI_SPECIALIST_MODEL",
   "OPENAI_ADVISOR_MODEL",
+] as const;
+
+const productionSecurityKeys = [
+  "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
   "TURNSTILE_SECRET_KEY",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
@@ -20,18 +24,34 @@ export type DeepDiveConfig = {
 };
 
 export function getDeepDiveConfig(environment: Record<string, string | undefined>) {
-  const missing = requiredKeys.filter((key) => !environment[key]?.trim());
+  const development = environment.NODE_ENV === "development";
+  const missingCore = coreKeys.filter((key) => !environment[key]?.trim());
+  const missingSecurity = productionSecurityKeys.filter((key) => !environment[key]?.trim());
+  const missing = [...missingCore, ...(development ? [] : missingSecurity)];
   if (missing.length > 0) return { ok: false as const, missing: [...missing] };
+  const bypassTurnstile =
+    development &&
+    (!environment.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ||
+      !environment.TURNSTILE_SECRET_KEY?.trim());
+  const bypassRateLimit =
+    development &&
+    (!environment.UPSTASH_REDIS_REST_URL?.trim() ||
+      !environment.UPSTASH_REDIS_REST_TOKEN?.trim());
   return {
     ok: true as const,
     config: {
       openAIKey: environment.OPENAI_API_KEY!,
       specialistModel: environment.OPENAI_SPECIALIST_MODEL!,
       advisorModel: environment.OPENAI_ADVISOR_MODEL!,
-      turnstileSecret: environment.TURNSTILE_SECRET_KEY!,
-      upstashUrl: environment.UPSTASH_REDIS_REST_URL!,
-      upstashToken: environment.UPSTASH_REDIS_REST_TOKEN!,
+      turnstileSecret: environment.TURNSTILE_SECRET_KEY?.trim() ?? "",
+      upstashUrl: environment.UPSTASH_REDIS_REST_URL?.trim() ?? "",
+      upstashToken: environment.UPSTASH_REDIS_REST_TOKEN?.trim() ?? "",
     } satisfies DeepDiveConfig,
+    security: {
+      bypassTurnstile,
+      bypassRateLimit,
+      unprotectedDevRun: bypassTurnstile || bypassRateLimit,
+    },
   };
 }
 

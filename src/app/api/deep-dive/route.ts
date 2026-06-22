@@ -42,19 +42,23 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
     "unknown";
-  const verified = await verifyTurnstile(
-    parsed.data.turnstileToken,
-    clientIp,
-    configuration.config.turnstileSecret,
-  );
-  if (!verified) return jsonError("Human verification failed. Please try again.", 403);
+  if (!configuration.security.bypassTurnstile) {
+    const verified = await verifyTurnstile(
+      parsed.data.turnstileToken,
+      clientIp,
+      configuration.config.turnstileSecret,
+    );
+    if (!verified) return jsonError("Human verification failed. Please try again.", 403);
+  }
 
-  const identifier = await hashIdentifier(clientIp, configuration.config.turnstileSecret);
-  const limit = await checkRateLimits(configuration.config, identifier);
-  if (!limit.allowed) {
-    return jsonError("Deep Dive limit reached. Try again after the reset time.", 429, {
-      resetAt: new Date(limit.reset).toISOString(),
-    });
+  if (!configuration.security.bypassRateLimit) {
+    const identifier = await hashIdentifier(clientIp, configuration.config.turnstileSecret);
+    const limit = await checkRateLimits(configuration.config, identifier);
+    if (!limit.allowed) {
+      return jsonError("Deep Dive limit reached. Try again after the reset time.", 429, {
+        resetAt: new Date(limit.reset).toISOString(),
+      });
+    }
   }
 
   const encoder = new TextEncoder();
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
             createId: () => crypto.randomUUID(),
           },
           (progress) => emit({ type: "progress", ...progress }),
+          { unprotectedDevRun: configuration.security.unprotectedDevRun },
         );
         emit({ type: "report", report });
       } catch {

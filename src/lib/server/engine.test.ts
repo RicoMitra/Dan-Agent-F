@@ -74,11 +74,27 @@ describe("DanA-F engine", () => {
   it("runs five specialists and Advisor while preserving deterministic impact", async () => {
     const deps = dependencies();
     const progress: string[] = [];
-    const report = await runDeepDive(portfolio, deps, (event) => progress.push(`${event.agent}:${event.status}`));
+    const report = await runDeepDive(
+      portfolio,
+      deps,
+      (event) => progress.push(`${event.agent}:${event.status}`),
+      { unprotectedDevRun: true },
+    );
 
     expect(deps.runSpecialist).toHaveBeenCalledTimes(5);
     expect(deps.runAdvisor).toHaveBeenCalledTimes(1);
     expect(report.dailyImpact).toBe(20_000);
+    expect(report.version).toBe(2);
+    expect(report.portfolioValue).toBe(1_900_000);
+    expect(report.investedCapital).toBe(800_000);
+    expect(report.floatingProfitLoss).toBe(100_000);
+    expect(report.cashBalance).toBe(1_000_000);
+    expect(report.returnPercentage).toBe(12.5);
+    expect(report.dailyImpactPercentage).toBeCloseTo(20_000 / 1_880_000 * 100);
+    expect(report.health.score).toBeGreaterThanOrEqual(0);
+    expect(report.bullishEvidence.length).toBeGreaterThan(0);
+    expect(report.bearishEvidence.length).toBeGreaterThan(0);
+    expect(report.security.unprotectedDevRun).toBe(true);
     expect(report.sections).toHaveLength(6);
     expect(report.status).toBe("complete");
     expect(progress).toContain("advisor:complete");

@@ -3,7 +3,7 @@ import type { DeepDiveReport, Holding, PortfolioState } from "@/lib/types";
 
 export const STORAGE_KEY = "dan-agent-f:portfolio:v2";
 export const LEGACY_STORAGE_KEY = "portfolio-dashboard:v1";
-export const REPORT_STORAGE_KEY = "dan-agent-f:latest-report:v1";
+export const REPORT_STORAGE_KEY = "dan-agent-f:latest-report:v2";
 
 function migrateLegacyPortfolio(value: unknown): PortfolioState | null {
   if (!value || typeof value !== "object") return null;
@@ -90,7 +90,7 @@ function isStoredReport(value: unknown): value is DeepDiveReport {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<DeepDiveReport>;
   return (
-    candidate.version === 1 &&
+    candidate.version === 2 &&
     typeof candidate.id === "string" &&
     typeof candidate.portfolioFingerprint === "string"
   );

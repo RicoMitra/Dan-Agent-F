@@ -4,7 +4,7 @@ import {
   calculateRealizedVolatility,
   createPortfolioFingerprint,
 } from "@/lib/intelligence";
-import { calculatePortfolio, CONCENTRATION_THRESHOLD } from "@/lib/portfolio";
+import { calculateHealthScore, calculatePortfolio, CONCENTRATION_THRESHOLD } from "@/lib/portfolio";
 import type { SpecialistOutput } from "@/lib/deep-dive-schema";
 import type {
   AgentSection,
@@ -72,6 +72,7 @@ export async function runDeepDive(
   portfolio: PortfolioState,
   dependencies: EngineDependencies,
   onProgress: (event: EngineProgress) => void,
+  security: { unprotectedDevRun: boolean } = { unprotectedDevRun: false },
 ): Promise<DeepDiveReport> {
   onProgress({ agent: "data", status: "started", message: "Collecting current evidence" });
   const evidence = await dependencies.fetchEvidence(portfolio);
@@ -105,6 +106,24 @@ export async function runDeepDive(
     positiveBreadth: evidence.positiveBreadth,
     volatilityDailyPercentage: volatility.dailyPercentage,
   });
+  const health = calculateHealthScore(summary);
+  const priorPortfolioValue = summary.totalPortfolioValue - daily.totalImpact;
+  const dailyImpactPercentage =
+    priorPortfolioValue > 0 ? (daily.totalImpact / priorPortfolioValue) * 100 : 0;
+  const evidenceComponents = [
+    ["Price momentum", balance.components.momentum],
+    ["News sentiment", balance.components.sentiment],
+    ["Positive breadth", balance.components.breadth],
+    ["Inverse volatility", balance.components.volatility],
+  ] as const;
+  const bullishEvidence = evidenceComponents
+    .filter(([, score]) => score > 0)
+    .map(([label, score]) => `${label} contributes +${score.toFixed(1)} to current evidence.`);
+  const bearishEvidence = evidenceComponents
+    .filter(([, score]) => score < 0)
+    .map(([label, score]) => `${label} contributes ${score.toFixed(1)} to current evidence.`);
+  if (bullishEvidence.length === 0) bullishEvidence.push("No supportive component is currently available.");
+  if (bearishEvidence.length === 0) bearishEvidence.push("No cautionary component is currently available.");
   const largest = summary.holdings.reduce(
     (current, holding) =>
       holding.allocationPercentage > current.allocationPercentage ? holding : current,
@@ -129,8 +148,14 @@ export async function runDeepDive(
   ];
   const deterministic = {
     portfolioValue: summary.totalPortfolioValue,
+    investedCapital: summary.totalInvestedCapital,
+    floatingProfitLoss: summary.floatingProfitLoss,
+    cashBalance: summary.cashBalance,
+    returnPercentage: summary.returnPercentage,
     dailyImpact: daily.totalImpact,
+    dailyImpactPercentage,
     dailyImpactCoverage: daily.coverage,
+    health,
     volatility,
     evidenceBalance: balance,
     risks,
@@ -160,15 +185,22 @@ export async function runDeepDive(
 
   const generatedAt = dependencies.now().toISOString();
   return {
-    version: 1,
+    version: 2,
     id: dependencies.createId(),
     generatedAt,
     portfolioFingerprint: createPortfolioFingerprint(portfolio),
     status: partial ? "partial" : "complete",
     executivePulse: advisor.headline,
     portfolioValue: summary.totalPortfolioValue,
+    investedCapital: summary.totalInvestedCapital,
+    floatingProfitLoss: summary.floatingProfitLoss,
+    cashBalance: summary.cashBalance,
+    returnPercentage: summary.returnPercentage,
     dailyImpact: daily.totalImpact,
+    dailyImpactPercentage,
     dailyImpactCoverage: daily.coverage,
+    health,
+    security,
     sentiment: {
       status: sentimentScore === null ? "insufficient" : "available",
       score: sentimentScore,
@@ -178,6 +210,8 @@ export async function runDeepDive(
     },
     volatility,
     evidenceBalance: balance,
+    bullishEvidence,
+    bearishEvidence,
     risks,
     holdingImpacts: daily.holdings.map((holding) => ({
       ticker: holding.ticker,

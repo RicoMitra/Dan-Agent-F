@@ -70,7 +70,7 @@ Add new entries instead of silently changing accepted decisions. Mark replaced d
 
 ## D-012: Private Client-Side PDF
 
-- **Status:** Accepted
+- **Status:** Superseded for Deep Dive by D-014; retained for Monitoring
 - **Decision:** Generate the premium report in the browser with jsPDF and AutoTable.
 - **Consequence:** Include methodology, sources, timestamps, coverage, and disclaimer; render a deterministic sample for visual QA.
 
@@ -79,3 +79,15 @@ Add new entries instead of silently changing accepted decisions. Mark replaced d
 - **Status:** Accepted
 - **Decision:** Use English copy, IDX/IDR semantics, IBM Plex Sans, cream/off-white surfaces, charcoal, and restrained gold.
 - **Consequence:** Meet documented accessibility and responsive requirements without trading-terminal styling.
+
+## D-014: Deep Dive Report v2 and WYSIWYG Export
+
+- **Status:** Accepted
+- **Decision:** Render the Deep Dive as a cream-based card and narrative report, persist only schema version 2, and export the marked visible DOM client-side with html2canvas and jsPDF.
+- **Consequence:** UI and user-downloaded PDF share the same hierarchy; Deep Dive uses no dense table, incompatible version-1 reports are ignored, and no export service receives private data.
+
+## D-015: Development-Only Security Bypass
+
+- **Status:** Accepted
+- **Decision:** When and only when `NODE_ENV` is `development`, allow missing Turnstile and Upstash configuration to be bypassed while consent remains mandatory. Mark the UI and report as `Unprotected dev run`.
+- **Consequence:** Local analysis can run without Cloudflare setup. Production remains fail-closed and requires Turnstile plus rate limiting.

@@ -18,14 +18,14 @@ explicit consent + Turnstile -> protected server route -> Yahoo + GDELT evidence
                                               |
                               five parallel specialists -> Advisor
                                               |
-                         validated NDJSON report -> local latest report + PDF
+                         validated NDJSON report -> local v2 report + WYSIWYG PDF
 ```
 
 Portfolio data and the latest report stay in the current browser. Quote refresh sends ticker symbols only. Deep Dive sends the validated snapshot only after per-run consent. The server does not persist portfolio payloads or reports.
 
 ## Stack
 
-Next.js App Router, strict TypeScript, Tailwind CSS, shadcn-compatible primitives, Recharts, OpenAI Responses API, Zod, Cloudflare Turnstile, Upstash Redis rate limiting, jsPDF, Vitest, Testing Library, Playwright, GitHub Actions, and Vercel.
+Next.js App Router, strict TypeScript, Tailwind CSS, shadcn-compatible primitives, Recharts, OpenAI Responses API, Zod, Cloudflare Turnstile, Upstash Redis rate limiting, html2canvas, jsPDF, Vitest, Testing Library, Playwright, GitHub Actions, and Vercel.
 
 ## Local Setup
 
@@ -37,7 +37,7 @@ copy .env.example .env.local
 pnpm dev
 ```
 
-Monitoring works without credentials. Live Deep Dive requires these server-side values:
+Monitoring works without credentials. Local Deep Dive requires the OpenAI values. In `NODE_ENV=development`, missing Turnstile or Upstash values are bypassed and every result is visibly marked `Unprotected dev run`. Production requires every value below and fails closed when any security value is missing.
 
 ```dotenv
 OPENAI_API_KEY=
@@ -81,8 +81,10 @@ Generated PDF samples are written to `output/pdf/` and must be rendered to PNG f
 - No authentication or portfolio database
 - Versioned local state and explicit reset/delete controls
 - OpenAI requests use `store: false`
-- Turnstile verification on every run
-- Hashed-IP Upstash limits: 3 runs/hour and 10/day
+- Turnstile verification on every production run
+- Hashed-IP Upstash limits in production: 3 runs/hour and 10/day
+- Development-only missing-key bypass with visible `Unprotected dev run` labelling; consent is never bypassed
+- WYSIWYG Deep Dive PDF capture runs entirely in the browser
 - No portfolio, prompt, report, token, or API-key logging
 
 Provider retention remains governed by the owner's provider account policies.
